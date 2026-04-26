@@ -1,8 +1,10 @@
-
+import { useState } from 'react';
 import { Github, Play, ArrowRight, Activity, Loader2, AlertCircle } from 'lucide-react';
 import { useBlindspotStore } from '../store/useBlindspotStore';
 
 export default function App() {
+  const [isDarkMode, setIsDarkMode] = useState(true);
+
   const repoUrl = useBlindspotStore(state => state.repoUrl);
   const setRepoUrl = useBlindspotStore(state => state.setRepoUrl);
   const scanStatus = useBlindspotStore(state => state.scanStatus);
@@ -15,23 +17,54 @@ export default function App() {
   };
 
   const getBorderColor = (severity: string) => {
-    if (severity === 'high') return 'border-red-500';
-    if (severity === 'medium') return 'border-yellow-500';
-    return 'border-blue-500';
+    if (severity === 'high') return '#ef4444'; // red-500
+    if (severity === 'medium') return '#f59e0b';
+    return 'var(--secondary)';
   };
 
-  const getBadgeColor = (severity: string) => {
-    if (severity === 'high') return 'bg-red-500/10 text-red-400 border-red-500/20';
-    if (severity === 'medium') return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
-    return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+  const themeVars = isDarkMode ? {
+    '--bg': '#0a0a0f',
+    '--surface': '#12121a',
+    '--surface2': '#1a1a28',
+    '--border': '#2a2a40',
+    '--text': '#e2e8f0',
+    '--text-muted': '#64748b',
+    '--primary': '#7c3aed',
+    '--secondary': '#06b6d4'
+  } : {
+    '--bg': '#f5f4ff',
+    '--surface': '#ffffff',
+    '--surface2': '#ede9fe',
+    '--border': '#c4b5fd',
+    '--text': '#1e1b4b',
+    '--text-muted': '#6b7280',
+    '--primary': '#7c3aed',
+    '--secondary': '#0891b2'
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#0a0a0a] text-gray-200 font-sans p-4 overflow-hidden">
+    <div className="flex flex-col h-screen font-sans p-4 overflow-hidden aurora-bg" style={{ ...themeVars, background: 'var(--bg)', color: 'var(--text)' } as React.CSSProperties}>
+      <div className="flex justify-end mb-4">
+        <button onClick={() => setIsDarkMode(!isDarkMode)} style={{
+          background: 'var(--surface2)',
+          border: '1px solid var(--border)',
+          color: 'var(--text)',
+          borderRadius: '20px',
+          padding: '4px 12px',
+          fontSize: '14px',
+          cursor: 'pointer'
+        }}>
+          {isDarkMode ? '☀️ Light' : '🌙 Dark'}
+        </button>
+      </div>
+
       {/* Top Action */}
       <button 
         onClick={openBuilder}
-        className="w-full flex-shrink-0 flex items-center justify-center gap-2 bg-[#141414] border border-zinc-800 hover:border-indigo-500/50 hover:bg-[#1a1a1a] text-indigo-400 py-3 rounded-xl transition-all shadow-sm font-medium text-sm mb-6"
+        className="w-full flex-shrink-0 flex items-center justify-center gap-2 py-3 rounded-xl transition-all shadow-sm font-medium text-sm mb-6 border"
+        style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--primary)' }}
+        onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.background = 'var(--surface2)' }}
+        onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--surface)' }}
       >
         <span>⚡ Open Noosphere Builder</span>
         <ArrowRight size={16} />
@@ -39,11 +72,11 @@ export default function App() {
 
       <div className="flex-1 flex flex-col min-h-0">
         <div className="mb-4 flex-shrink-0">
-          <h1 className="text-xl font-semibold text-white flex items-center gap-2 mb-2">
-            <Activity className="text-indigo-500" size={20} />
+          <h1 className="text-xl font-semibold flex items-center gap-2 mb-2" style={{ color: 'var(--text)' }}>
+            <Activity size={20} style={{ color: 'var(--secondary)' }} />
             Blindspot Scan
           </h1>
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
             Analyze repository structure for missing paradigms and optimizations.
           </p>
         </div>
@@ -52,7 +85,7 @@ export default function App() {
         <div className="space-y-4 mb-6 flex-shrink-0">
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-xs font-medium text-zinc-400 uppercase tracking-wider">
+              <label className="block text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
                 Target Repository
               </label>
               <button 
@@ -67,19 +100,29 @@ export default function App() {
                     }
                   });
                 }}
-                className="text-[10px] bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-2 py-1 rounded transition-colors flex items-center gap-1"
+                className="text-[10px] px-2 py-1 rounded transition-colors flex items-center gap-1 border"
+                style={{ background: 'var(--surface2)', color: 'var(--text)', borderColor: 'var(--border)' }}
               >
                 📋 Use Current Tab
               </button>
             </div>
-            <div className="relative">
-              <Github className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
+            <div className="relative group">
+              <Github className="absolute left-3 top-1/2 -translate-y-1/2" size={16} style={{ color: 'var(--text-muted)' }} />
               <input
                 type="text"
                 value={repoUrl}
                 onChange={(e) => setRepoUrl(e.target.value)}
                 placeholder="https://github.com/owner/repo"
-                className="w-full bg-[#141414] border border-zinc-800 focus:border-indigo-500/50 outline-none rounded-lg py-2.5 pl-10 pr-4 text-sm text-white placeholder-zinc-600 transition-all"
+                className="w-full outline-none rounded-lg py-2.5 pl-10 pr-4 text-sm transition-all border"
+                style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--primary)';
+                  e.currentTarget.style.boxShadow = '0 0 0 2px rgba(124,58,237,0.15)';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--border)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
               />
             </div>
           </div>
@@ -87,7 +130,8 @@ export default function App() {
           <button 
             onClick={() => runScan(repoUrl)}
             disabled={scanStatus === 'loading' || !repoUrl}
-            className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-600/50 disabled:cursor-not-allowed text-white py-2.5 rounded-lg transition-all font-medium text-sm shadow-md"
+            className="w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-white py-2.5 rounded-lg transition-all font-medium text-sm shadow-md"
+            style={{ background: 'linear-gradient(135deg, var(--primary), #6d28d9)' }}
           >
             {scanStatus === 'loading' ? (
               <Loader2 className="animate-spin" size={16} />
@@ -99,13 +143,13 @@ export default function App() {
         </div>
 
         {/* Results Area */}
-        <div className="flex-1 flex flex-col min-h-0 border border-zinc-800/50 rounded-lg bg-[#0d0d0d] p-4">
-          <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-3 flex-shrink-0">Scan Results</h3>
+        <div className="flex-1 flex flex-col min-h-0 border rounded-lg p-4" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+          <h3 className="text-xs font-semibold uppercase tracking-wide mb-3 flex-shrink-0" style={{ color: 'var(--text-muted)' }}>Scan Results</h3>
           
           <div className="flex-1 overflow-y-auto space-y-3 pr-1">
             {scanStatus === 'idle' && (
-              <div className="h-full flex items-center justify-center border border-dashed border-zinc-800 rounded-md bg-[#141414]/50 p-4">
-                <p className="text-xs text-zinc-600 text-center max-w-[200px]">
+              <div className="h-full flex items-center justify-center border border-dashed rounded-md p-4" style={{ background: 'var(--surface2)', borderColor: 'var(--border)' }}>
+                <p className="text-xs text-center max-w-[200px]" style={{ color: 'var(--text-muted)' }}>
                   Ready to scan. Enter a repository URL to begin blindspot analysis.
                 </p>
               </div>
@@ -114,17 +158,17 @@ export default function App() {
             {scanStatus === 'loading' && (
               <div className="space-y-3">
                 {[1, 2, 3].map(i => (
-                  <div key={i} className="animate-pulse bg-[#141414] border border-zinc-800/50 rounded-lg p-4 h-24">
-                    <div className="h-4 bg-zinc-800 rounded w-1/4 mb-4"></div>
-                    <div className="h-3 bg-zinc-800 rounded w-3/4 mb-2"></div>
-                    <div className="h-3 bg-zinc-800 rounded w-1/2"></div>
+                  <div key={i} className="animate-pulse border rounded-lg p-4 h-24" style={{ background: 'var(--surface2)', borderColor: 'var(--border)' }}>
+                    <div className="h-4 rounded w-1/4 mb-4" style={{ background: 'var(--border)' }}></div>
+                    <div className="h-3 rounded w-3/4 mb-2" style={{ background: 'var(--border)' }}></div>
+                    <div className="h-3 rounded w-1/2" style={{ background: 'var(--border)' }}></div>
                   </div>
                 ))}
               </div>
             )}
 
             {scanStatus === 'error' && (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 flex gap-3 text-red-400">
+              <div className="border rounded-lg p-4 flex gap-3" style={{ background: '#ef44441a', borderColor: '#ef444433', color: '#ef4444' }}>
                 <AlertCircle className="flex-shrink-0 mt-0.5" size={18} />
                 <p className="text-sm">{errorMessage}</p>
               </div>
@@ -133,15 +177,16 @@ export default function App() {
             {scanStatus === 'done' && scanResults.map(result => (
               <div 
                 key={result.id} 
-                className={`bg-[#141414] border border-zinc-800/50 border-l-4 ${getBorderColor(result.severity)} rounded-lg p-4`}
+                className="border border-l-4 rounded-lg p-4 transition-colors"
+                style={{ background: 'var(--surface2)', borderLeftColor: getBorderColor(result.severity), borderTopColor: 'var(--border)', borderRightColor: 'var(--border)', borderBottomColor: 'var(--border)' }}
               >
                 <div className="flex items-start justify-between mb-2">
-                  <h4 className="text-sm font-semibold text-gray-200">{result.title}</h4>
-                  <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border ${getBadgeColor(result.severity)}`}>
+                  <h4 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{result.title}</h4>
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border" style={{ color: getBorderColor(result.severity), borderColor: getBorderColor(result.severity) }}>
                     {result.category}
                   </span>
                 </div>
-                <p className="text-xs text-zinc-500 leading-relaxed">
+                <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
                   {result.description}
                 </p>
               </div>
