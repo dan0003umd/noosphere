@@ -1,9 +1,13 @@
 import { useState } from 'react';
 import { Github, Play, ArrowRight, Activity, Loader2, AlertCircle } from 'lucide-react';
 import { useBlindspotStore } from '../store/useBlindspotStore';
+import emailjs from '@emailjs/browser';
 
 export default function App() {
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [emailAddress, setEmailAddress] = useState('');
+  const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
 
   const repoUrl = useBlindspotStore(state => state.repoUrl);
   const setRepoUrl = useBlindspotStore(state => state.setRepoUrl);
@@ -14,6 +18,35 @@ export default function App() {
 
   const openBuilder = () => {
     chrome.tabs.create({ url: chrome.runtime.getURL('src/webapp/index.html') });
+  };
+
+  const handleSendReport = async () => {
+    if (!emailAddress) return;
+    setEmailStatus('sending');
+    try {
+      const reportBody = scanResults.map(r =>
+        `[${r.severity.toUpperCase()}] ${r.category} — ${r.title}\n${r.description}`
+      ).join('\n\n');
+      
+      await emailjs.send(
+        import.meta.env.VITE_EMAILJS_SERVICE_ID,
+        import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+        {
+          to_email: emailAddress,
+          repo_url: repoUrl,
+          report_body: reportBody,
+          total_issues: scanResults.length,
+          high_count: scanResults.filter(r => r.severity === 'high').length,
+          medium_count: scanResults.filter(r => r.severity === 'medium').length,
+          low_count: scanResults.filter(r => r.severity === 'low').length,
+        },
+        import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+      );
+      setEmailStatus('success');
+    } catch (e) {
+      console.error(e);
+      setEmailStatus('error');
+    }
   };
 
   const getBorderColor = (severity: string) => {
@@ -191,6 +224,50 @@ export default function App() {
                 </p>
               </div>
             ))}
+
+            {scanStatus === 'done' && (
+              <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
+                {!showEmailForm ? (
+                  <button 
+                    onClick={() => setShowEmailForm(true)}
+                    className="w-full py-2 rounded-lg text-sm font-medium transition-all"
+                    style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                  >
+                    Get Report
+                  </button>
+                ) : (
+                  <div className="space-y-3">
+                    <input 
+                      type="email" 
+                      value={emailAddress}
+                      onChange={e => setEmailAddress(e.target.value)}
+                      placeholder="Enter your email address"
+                      className="w-full outline-none rounded-lg py-2.5 px-4 text-sm transition-all border"
+                      style={{ background: 'var(--surface2)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--primary)';
+                        e.currentTarget.style.boxShadow = '0 0 0 2px rgba(124,58,237,0.15)';
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--border)';
+                        e.currentTarget.style.boxShadow = 'none';
+                      }}
+                    />
+                    <button 
+                      onClick={handleSendReport}
+                      disabled={emailStatus === 'sending' || !emailAddress}
+                      className="w-full flex justify-center items-center gap-2 py-2.5 rounded-lg text-sm font-medium text-white transition-all disabled:opacity-50"
+                      style={{ background: 'linear-gradient(135deg, var(--primary), #6d28d9)' }}
+                    >
+                      {emailStatus === 'sending' && <Loader2 size={16} className="animate-spin" />}
+                      Send Report
+                    </button>
+                    {emailStatus === 'success' && <p className="text-center text-xs text-green-500 mt-2">✅ Report sent!</p>}
+                    {emailStatus === 'error' && <p className="text-center text-xs text-red-500 mt-2">❌ Failed to send</p>}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
